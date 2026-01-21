@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, h, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t, locale } = useI18n()
 import {
     Sparkles,
     Search,
@@ -79,6 +81,13 @@ const DEFAULT_CONFIG = {
 }
 
 // 监听配置变化并保存
+watch(
+    () => locale.value,
+    newVal => {
+        localStorage.setItem('language', newVal)
+    }
+)
+
 watch(
     () => apiConfig,
     newVal => {
@@ -328,7 +337,7 @@ const generateNodeImage = async (nodeId: string, prompt: string) => {
             },
             body: JSON.stringify({
                 model: useConfig.model,
-                prompt: `生成一张图片，表现主题：${prompt}。要求：构图简洁，色彩明快，适合作为思维导图的视觉辅助。`
+                prompt: t('prompts.image', { prompt })
             })
         })
 
@@ -388,30 +397,14 @@ const expandIdea = async (param?: any, customInput?: string) => {
         setEdges([])
     }
 
-    const systemPrompt = `你是一个思维发散助手，帮助用户将想法逐层展开，构建思维树。
-
-工作流程：
-1. 用户给出一个初始想法（或选择一个已有节点继续追问）。
-2. 你需要根据【思考上下文路径】（即从根节点到当前节点的思考链路）来理解用户的意图。
-3. 生成 3-5 个更深层或相关维度的子想法。
-4. 每个子想法包含简短名称和极简描述。
-
-返回格式必须为严格 JSON：
-{
-  "nodes": [
-    { "text": "子想法1名称", "description": "一句话描述" },
-    { "text": "子想法2名称", "description": "一句话描述" }
-  ]
-}
-
-注意：只返回 JSON，不附加解释。`
+    const systemPrompt = t('prompts.system')
 
     let userMessage = ''
     if (parentNode) {
         const path = findPathToNode(parentNode.id)
-        userMessage = `[思考上下文路径]: ${path.join(' -> ')}\n[当前选择节点]: ${parentNode.data.label}\n[用户追问/新要求]: ${customInput || '请继续深入发散'}`
+        userMessage = `[${t('prompts.contextPath')}]: ${path.join(' -> ')}\n[${t('prompts.selectedNode')}]: ${parentNode.data.label}\n[${t('prompts.newRequirement')}]: ${customInput || t('prompts.continue')}`
     } else {
-        userMessage = `核心想法: ${text}`
+        userMessage = `${t('prompts.coreIdeaPrefix')}: ${text}`
     }
 
     const useConfig = apiConfig.mode === 'default' ? DEFAULT_CONFIG.chat : apiConfig.chat
@@ -453,7 +446,7 @@ const expandIdea = async (param?: any, customInput?: string) => {
                 position: { x: startX, y: startY },
                 data: {
                     label: text,
-                    description: '核心想法',
+                    description: t('node.coreIdea'),
                     type: 'root',
                     isExpanding: false,
                     followUp: ''
@@ -537,27 +530,27 @@ const startNewSession = () => {
                 <!-- 工具按钮组 -->
                 <div class="flex items-center gap-2">
                     <!-- 重置画布 -->
-                    <button @click="startNewSession" class="toolbar-btn text-red-500 hover:bg-red-50 border-red-100" title="Reset Canvas">
+                    <button @click="startNewSession" class="toolbar-btn text-red-500 hover:bg-red-50 border-red-100" :title="t('nav.reset')">
                         <Trash2 class="w-4 h-4" />
-                        <span>RESET</span>
+                        <span>{{ t('nav.reset') }}</span>
                     </button>
 
                     <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
 
                     <!-- 布局控制 -->
-                    <button @click="fitView({ padding: 0.2, duration: 800 })" class="toolbar-btn text-blue-500 hover:bg-blue-50 border-blue-100" title="Fit View">
+                    <button @click="fitView({ padding: 0.2, duration: 800 })" class="toolbar-btn text-blue-500 hover:bg-blue-50 border-blue-100" :title="t('nav.fit')">
                         <Focus class="w-4 h-4" />
-                        <span>FIT</span>
+                        <span>{{ t('nav.fit') }}</span>
                     </button>
 
-                    <button @click="resetLayout" class="toolbar-btn text-purple-500 hover:bg-purple-50 border-purple-100" title="Reset Layout">
+                    <button @click="resetLayout" class="toolbar-btn text-purple-500 hover:bg-purple-50 border-purple-100" :title="t('nav.layout')">
                         <LayoutDashboard class="w-4 h-4" />
-                        <span>LAYOUT</span>
+                        <span>{{ t('nav.layout') }}</span>
                     </button>
 
-                    <button @click="centerRoot" class="toolbar-btn text-orange-500 hover:bg-orange-50 border-orange-100" title="Center Root">
+                    <button @click="centerRoot" class="toolbar-btn text-orange-500 hover:bg-orange-50 border-orange-100" :title="t('nav.center')">
                         <Target class="w-4 h-4" />
-                        <span>CENTER</span>
+                        <span>{{ t('nav.center') }}</span>
                     </button>
 
                     <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
@@ -566,13 +559,13 @@ const startNewSession = () => {
                     <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
                         <Palette class="w-3.5 h-3.5 text-slate-400" />
                         <input type="color" v-model="config.edgeColor" class="w-4 h-4 rounded cursor-pointer bg-transparent border-none" />
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Edge</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">{{ t('nav.edge') }}</span>
                     </div>
 
                     <!-- 背景样式 -->
                     <select v-model="config.backgroundVariant" class="toolbar-select">
-                        <option :value="BackgroundVariant.Lines">LINES</option>
-                        <option :value="BackgroundVariant.Dots">DOTS</option>
+                        <option :value="BackgroundVariant.Lines">{{ t('nav.lines') }}</option>
+                        <option :value="BackgroundVariant.Dots">{{ t('nav.dots') }}</option>
                     </select>
 
                     <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
@@ -582,10 +575,10 @@ const startNewSession = () => {
                         @click="config.showMiniMap = !config.showMiniMap"
                         class="toolbar-btn border-slate-100"
                         :class="config.showMiniMap ? 'text-blue-500 bg-blue-50 border-blue-100' : 'text-slate-400 hover:text-slate-600'"
-                        title="Toggle Minimap"
+                        :title="t('nav.map')"
                     >
                         <Map class="w-4 h-4" />
-                        <span>MAP</span>
+                        <span>{{ t('nav.map') }}</span>
                     </button>
 
                     <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
@@ -593,7 +586,7 @@ const startNewSession = () => {
                     <!-- 导出图片 -->
                     <button @click="exportImage" class="toolbar-btn text-emerald-600 hover:bg-emerald-50 border-emerald-100">
                         <Download class="w-4 h-4" />
-                        <span>EXPORT</span>
+                        <span>{{ t('nav.export') }}</span>
                     </button>
 
                     <div class="h-4 w-[1px] bg-slate-100 mx-1"></div>
@@ -601,19 +594,22 @@ const startNewSession = () => {
                     <!-- 设置按钮 -->
                     <button @click="showSettings = true" class="toolbar-btn text-slate-600 hover:bg-slate-50 border-slate-100">
                         <Settings class="w-4 h-4" />
-                        <span>API SETTINGS</span>
+                        <span>{{ t('common.settings') }}</span>
                     </button>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <button class="p-2 hover:bg-slate-100 rounded-md transition-colors text-slate-400 font-bold text-xs flex items-center gap-1">
-                    <Globe class="w-3.5 h-3.5" /> ZH
+                <button
+                    @click="locale = locale === 'zh' ? 'en' : 'zh'"
+                    class="p-2 hover:bg-slate-100 rounded-md transition-colors text-slate-400 font-bold text-xs flex items-center gap-1"
+                >
+                    <Globe class="w-3.5 h-3.5" /> {{ locale === 'zh' ? 'EN' : 'ZH' }}
                 </button>
                 <button
                     class="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                 >
-                    SIGN IN <LogIn class="w-3.5 h-3.5 ml-1" />
+                    {{ t('common.signin') }} <LogIn class="w-3.5 h-3.5 ml-1" />
                 </button>
             </div>
         </nav>
@@ -660,7 +656,7 @@ const startNewSession = () => {
                                 <div class="w-2 h-2 rounded-full bg-slate-200"></div>
                             </div>
                             <span class="window-title" :style="{ color: activePath.nodeIds.has(id) ? config.edgeColor : '' }">
-                                {{ data.type === 'root' ? 'main.ts' : 'module.tsx' }}
+                                {{ data.type === 'root' ? t('node.mainTitle') : t('node.moduleTitle') }}
                             </span>
                         </div>
 
@@ -673,7 +669,7 @@ const startNewSession = () => {
                                 <RefreshCw class="w-8 h-8 text-slate-900 animate-spin mb-3" :style="{ color: config.edgeColor }" />
                                 <div class="absolute inset-0 blur-xl opacity-20 animate-pulse" :style="{ backgroundColor: config.edgeColor }"></div>
                             </div>
-                            <span class="text-[10px] font-black tracking-widest uppercase text-slate-500">Expanding Idea...</span>
+                            <span class="text-[10px] font-black tracking-widest uppercase text-slate-500">{{ t('common.expanding') }}</span>
                         </div>
 
                         <!-- Window Content -->
@@ -687,19 +683,19 @@ const startNewSession = () => {
                                 <img v-if="data.imageUrl" :src="data.imageUrl" class="w-full h-full object-cover" />
                                 <div v-if="data.isImageLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm cursor-default">
                                     <RefreshCw class="w-6 h-6 text-orange-500 animate-spin mb-2" />
-                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Generating...</span>
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">{{ t('common.generating') }}</span>
                                 </div>
                                 <div
                                     v-if="data.imageUrl"
                                     class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2"
                                 >
-                                    <button class="p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all" title="View">
+                                    <button class="p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all" :title="t('node.view')">
                                         <Maximize2 class="w-4 h-4 text-white" />
                                     </button>
                                     <button
                                         @click.stop="generateNodeImage(id, data.label)"
                                         class="p-2 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all"
-                                        title="Regenerate"
+                                        :title="t('node.regenerate')"
                                     >
                                         <RefreshCw class="w-4 h-4 text-white" />
                                     </button>
@@ -719,7 +715,9 @@ const startNewSession = () => {
                                 <div class="flex items-center justify-between mb-3">
                                     <div class="flex items-center gap-1.5 shrink-0">
                                         <div class="w-1.5 h-1.5 rounded-full animate-pulse" :style="{ backgroundColor: data.isExpanding ? config.edgeColor : '#34d399' }"></div>
-                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ data.isExpanding ? 'Expanding' : 'active' }}</span>
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{
+                                            data.isExpanding ? t('common.expanding') : t('common.active')
+                                        }}</span>
                                     </div>
 
                                     <div class="flex items-center gap-2">
@@ -729,7 +727,7 @@ const startNewSession = () => {
                                             class="action-btn text-blue-500 hover:bg-blue-50"
                                         >
                                             <ImageIcon class="w-2.5 h-2.5" />
-                                            <span>IMG</span>
+                                            <span>{{ t('node.imgAction') }}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -747,7 +745,7 @@ const startNewSession = () => {
                                             @focus="focusedNodeId = id"
                                             @blur="focusedNodeId = null"
                                             @keyup.enter="expandIdea({ id, data, position: flowNodes.find(n => n.id === id)?.position }, data.followUp)"
-                                            placeholder="Ask a follow-up..."
+                                            :placeholder="t('node.followUp')"
                                             class="bg-transparent border-none outline-none text-[10px] font-bold text-slate-700 flex-grow placeholder:text-slate-300"
                                             :disabled="data.isExpanding"
                                         />
@@ -780,8 +778,8 @@ const startNewSession = () => {
                                 <Settings class="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 class="text-lg font-black text-slate-900 tracking-tight">API Settings</h3>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Configure your AI endpoints</p>
+                                <h3 class="text-lg font-black text-slate-900 tracking-tight">{{ t('settings.title') }}</h3>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">{{ t('settings.subtitle') }}</p>
                             </div>
                         </div>
                         <button @click="showSettings = false" class="p-2 hover:bg-slate-200 rounded-xl transition-colors">
@@ -797,55 +795,54 @@ const startNewSession = () => {
                                 class="px-6 py-2 rounded-xl text-xs font-black tracking-widest transition-all"
                                 :class="apiConfig.mode === 'default' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
                             >
-                                DEFAULT
+                                {{ t('common.default') }}
                             </button>
                             <button
                                 @click="apiConfig.mode = 'custom'"
                                 class="px-6 py-2 rounded-xl text-xs font-black tracking-widest transition-all"
                                 :class="apiConfig.mode === 'custom' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
                             >
-                                CUSTOM
+                                {{ t('common.custom') }}
                             </button>
                         </div>
 
-                        <!-- 文本生成配置 -->
                         <div v-if="apiConfig.mode === 'custom'" class="space-y-4 animate-in slide-in-from-top-2 duration-300">
                             <div class="flex items-center gap-2 text-slate-900">
                                 <Sparkles class="w-4 h-4 text-orange-500" />
-                                <span class="text-sm font-black uppercase tracking-widest">Text Generation (Chat)</span>
+                                <span class="text-sm font-black uppercase tracking-widest">{{ t('settings.textGen') }}</span>
                             </div>
                             <div class="grid grid-cols-1 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                                 <div class="space-y-1.5">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                        <LinkIcon class="w-3 h-3" /> Base URL
+                                        <LinkIcon class="w-3 h-3" /> {{ t('settings.baseUrl') }}
                                     </label>
                                     <input
                                         v-model="apiConfig.chat.baseUrl"
                                         type="text"
-                                        placeholder="https://api.example.com/v1/chat/completions"
+                                        :placeholder="t('settings.placeholderUrl')"
                                         class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-mono"
                                     />
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="space-y-1.5">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                            <Shield class="w-3 h-3" /> Model Name
+                                            <Shield class="w-3 h-3" /> {{ t('settings.modelName') }}
                                         </label>
                                         <input
                                             v-model="apiConfig.chat.model"
                                             type="text"
-                                            placeholder="glm-4-flash"
+                                            :placeholder="t('settings.placeholderModel')"
                                             class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-mono"
                                         />
                                     </div>
                                     <div class="space-y-1.5">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                            <Key class="w-3 h-3" /> API Key
+                                            <Key class="w-3 h-3" /> {{ t('settings.apiKey') }}
                                         </label>
                                         <input
                                             v-model="apiConfig.chat.apiKey"
                                             type="password"
-                                            placeholder="sk-..."
+                                            :placeholder="t('settings.placeholderKey')"
                                             class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-mono"
                                         />
                                     </div>
@@ -853,44 +850,43 @@ const startNewSession = () => {
                             </div>
                         </div>
 
-                        <!-- 图片生成配置 -->
                         <div v-if="apiConfig.mode === 'custom'" class="space-y-4 animate-in slide-in-from-top-2 duration-300">
                             <div class="flex items-center gap-2 text-slate-900">
                                 <ImageIcon class="w-4 h-4 text-blue-500" />
-                                <span class="text-sm font-black uppercase tracking-widest">Image Generation</span>
+                                <span class="text-sm font-black uppercase tracking-widest">{{ t('settings.imageGen') }}</span>
                             </div>
                             <div class="grid grid-cols-1 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                                 <div class="space-y-1.5">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                        <LinkIcon class="w-3 h-3" /> Base URL
+                                        <LinkIcon class="w-3 h-3" /> {{ t('settings.baseUrl') }}
                                     </label>
                                     <input
                                         v-model="apiConfig.image.baseUrl"
                                         type="text"
-                                        placeholder="https://api.example.com/v1/images/generations"
+                                        :placeholder="t('settings.placeholderUrl')"
                                         class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono"
                                     />
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="space-y-1.5">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                            <Shield class="w-3 h-3" /> Model Name
+                                            <Shield class="w-3 h-3" /> {{ t('settings.modelName') }}
                                         </label>
                                         <input
                                             v-model="apiConfig.image.model"
                                             type="text"
-                                            placeholder="cogview-3-flash"
+                                            :placeholder="t('settings.placeholderModel')"
                                             class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono"
                                         />
                                     </div>
                                     <div class="space-y-1.5">
                                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                            <Key class="w-3 h-3" /> API Key
+                                            <Key class="w-3 h-3" /> {{ t('settings.apiKey') }}
                                         </label>
                                         <input
                                             v-model="apiConfig.image.apiKey"
                                             type="password"
-                                            placeholder="sk-..."
+                                            :placeholder="t('settings.placeholderKey')"
                                             class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono"
                                         />
                                     </div>
@@ -904,8 +900,8 @@ const startNewSession = () => {
                                 <Activity class="w-8 h-8 text-slate-400" />
                             </div>
                             <div class="space-y-1">
-                                <h4 class="text-sm font-black text-slate-900 uppercase">Using Default Endpoint</h4>
-                                <p class="text-xs text-slate-500 max-w-[280px]">Requests are currently being routed through the system's optimized default API service.</p>
+                                <h4 class="text-sm font-black text-slate-900 uppercase">{{ t('settings.defaultModeTitle') }}</h4>
+                                <p class="text-xs text-slate-500 max-w-[280px]">{{ t('settings.defaultModeDesc') }}</p>
                             </div>
                         </div>
                     </div>
@@ -913,9 +909,9 @@ const startNewSession = () => {
                     <div class="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
                         <button
                             @click="showSettings = false"
-                            class="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
+                            class="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95"
                         >
-                            SAVE CONFIGURATION
+                            {{ t('common.save') }}
                         </button>
                     </div>
                 </div>
@@ -949,7 +945,7 @@ const startNewSession = () => {
                     <Terminal class="w-5 h-5 text-slate-400" />
                     <input
                         v-model="ideaInput"
-                        placeholder="Enter your thought here..."
+                        :placeholder="t('nav.placeholder')"
                         class="flex-grow bg-transparent border-none outline-none text-sm font-bold text-slate-700 placeholder:text-slate-300"
                         @keyup.enter="expandIdea"
                     />
@@ -958,7 +954,7 @@ const startNewSession = () => {
                         :disabled="isLoading || !ideaInput.trim()"
                         class="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all active:scale-95 disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed group/btn"
                     >
-                        <span class="text-[10px] font-black tracking-widest uppercase mr-1">Execute</span>
+                        <span class="text-[10px] font-black tracking-widest uppercase mr-1">{{ t('nav.execute') }}</span>
                         <Zap v-if="!isLoading" class="w-4 h-4 text-orange-400 group-hover/btn:scale-110 transition-transform" />
                         <RefreshCw v-else class="w-4 h-4 animate-spin" />
                     </button>

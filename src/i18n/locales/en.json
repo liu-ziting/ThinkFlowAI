@@ -1,0 +1,62 @@
+{
+  "common": {
+    "settings": "API Settings",
+    "default": "DEFAULT",
+    "custom": "CUSTOM",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "generating": "Generating...",
+    "expanding": "Expanding Idea...",
+    "active": "Active",
+    "signin": "SIGN IN"
+  },
+  "nav": {
+    "title": "ThinkFlow AI",
+    "subtitle": "Mind Map & AI Assistant",
+    "placeholder": "Enter your thought here...",
+    "execute": "Execute",
+    "reset": "RESET",
+    "fit": "FIT",
+    "layout": "LAYOUT",
+    "center": "CENTER",
+    "edge": "EDGE",
+    "lines": "LINES",
+    "dots": "DOTS",
+    "map": "MAP",
+    "export": "EXPORT"
+  },
+  "settings": {
+    "title": "API Settings",
+    "subtitle": "Configure your AI endpoints",
+    "textGen": "Text Generation (Chat)",
+    "imageGen": "Image Generation",
+    "baseUrl": "Base URL",
+    "modelName": "Model Name",
+    "apiKey": "API Key",
+    "placeholderUrl": "https://api.example.com/v1/chat/completions",
+    "placeholderModel": "model-name",
+    "placeholderKey": "sk-...",
+    "defaultModeTitle": "Using Default Endpoint",
+    "defaultModeDesc": "Requests are currently being routed through the system's optimized default API service."
+  },
+  "node": {
+    "root": "ROOT",
+    "coreIdea": "Core Idea",
+    "followUp": "Ask a follow-up...",
+    "imgAction": "IMG",
+    "view": "View",
+    "regenerate": "Regenerate",
+    "mainTitle": "Root Node",
+    "moduleTitle": "Sub Module"
+  },
+  "prompts": {
+    "system": "You are a mind-mapping assistant that helps users expand their ideas layer by layer into a thinking tree.\n\nWorkflow:\n1. User provides an initial idea (or selects an existing node).\n2. Understand user intent based on the [Thinking Context Path] (trace from root to current node).\n3. Generate 3-5 deeper or related sub-ideas.\n4. Each sub-idea includes a short name and a minimal description.\n\nResponse format must be strict JSON:\n{\n  \"nodes\": [\n    { \"text\": \"Sub-idea 1 Name\", \"description\": \"One-sentence description\" },\n    { \"text\": \"Sub-idea 2 Name\", \"description\": \"One-sentence description\" }\n  ]\n}\n\nNote: Return ONLY JSON, no explanation.",
+    "image": "Generate an image representing the theme: {prompt}. Requirements: Simple composition, bright colors, suitable as a visual aid for a mind map.",
+    "continue": "Please continue exploring",
+    "coreIdeaPrefix": "Core Idea",
+    "contextPath": "Thinking Context Path",
+    "selectedNode": "Current Selected Node",
+    "newRequirement": "User Follow-up/New Requirement"
+  }
+}

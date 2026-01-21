@@ -17,7 +17,8 @@
     "axios": "^1.6.7",
     "html-to-image": "^1.11.13",
     "lucide-vue-next": "^0.322.0",
-    "vue": "^3.4.15"
+    "vue": "^3.4.15",
+    "vue-i18n": "^11.2.8"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.3",

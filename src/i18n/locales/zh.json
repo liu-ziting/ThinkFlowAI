@@ -1,0 +1,62 @@
+{
+  "common": {
+    "settings": "API 设置",
+    "default": "默认模式",
+    "custom": "自定义模式",
+    "save": "保存",
+    "cancel": "取消",
+    "loading": "加载中...",
+    "generating": "生成中...",
+    "expanding": "正在展开想法...",
+    "active": "激活",
+    "signin": "登录"
+  },
+  "nav": {
+    "title": "ThinkFlow AI",
+    "subtitle": "思维导图 & AI 助手",
+    "placeholder": "在这里输入您的想法...",
+    "execute": "执行发散",
+    "reset": "重置",
+    "fit": "适配",
+    "layout": "布局",
+    "center": "居中",
+    "edge": "连线",
+    "lines": "网格",
+    "dots": "点阵",
+    "map": "地图",
+    "export": "导出"
+  },
+  "settings": {
+    "title": "API 设置",
+    "subtitle": "配置您的 AI 接口地址",
+    "textGen": "文本生成 (Chat)",
+    "imageGen": "图片生成",
+    "baseUrl": "接口地址 (Base URL)",
+    "modelName": "模型名称",
+    "apiKey": "API 密钥 (Key)",
+    "placeholderUrl": "https://api.example.com/v1/chat/completions",
+    "placeholderModel": "模型名称",
+    "placeholderKey": "sk-...",
+    "defaultModeTitle": "使用默认接口",
+    "defaultModeDesc": "请求目前正通过系统优化的默认 API 服务进行路由。"
+  },
+  "node": {
+    "root": "根节点",
+    "coreIdea": "核心想法",
+    "followUp": "输入后续问题...",
+    "imgAction": "生图",
+    "view": "查看",
+    "regenerate": "重新生成",
+    "mainTitle": "主节点",
+    "moduleTitle": "子模块"
+  },
+  "prompts": {
+    "system": "你是一个思维发散助手，帮助用户将想法逐层展开，构建思维树。\n\n工作流程：\n1. 用户给出一个初始想法（或选择一个已有节点继续追问）。\n2. 你需要根据【思考上下文路径】（即从根节点到当前节点的思考链路）来理解用户的意图。\n3. 生成 3-5 个更深层或相关维度的子想法。\n4. 每个子想法包含简短名称和极简描述。\n\n返回格式必须为严格 JSON：\n{\n  \"nodes\": [\n    { \"text\": \"子想法1名称\", \"description\": \"一句话描述\" },\n    { \"text\": \"子想法2名称\", \"description\": \"一句话描述\" }\n  ]\n}\n\n注意：只返回 JSON，不附加解释。",
+    "image": "生成一张图片，表现主题：{prompt}。要求：构图简洁，色彩明快，适合作为思维导图的视觉辅助。",
+    "continue": "请继续深入发散",
+    "coreIdeaPrefix": "核心想法",
+    "contextPath": "思考上下文路径",
+    "selectedNode": "当前选择节点",
+    "newRequirement": "用户追问/新要求"
+  }
+}
