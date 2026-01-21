@@ -44,7 +44,6 @@ import { VueFlow, useVueFlow, Position, MarkerType, Handle } from '@vue-flow/cor
 import { Background, BackgroundVariant } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
-import { toPng } from 'html-to-image'
 
 // 导入 VueFlow 样式
 import '@vue-flow/core/dist/style.css'
@@ -315,23 +314,42 @@ const resetLayout = () => {
 /**
  * 导出为图片
  */
-const exportImage = async () => {
-    const el = document.querySelector('.vue-flow') as HTMLElement
-    if (!el) return
+const exportMarkdown = () => {
+    if (flowNodes.value.length === 0) return
 
-    try {
-        const dataUrl = await toPng(el, {
-            backgroundColor: '#ffffff',
-            quality: 1,
-            pixelRatio: 2
+    // 找到根节点
+    const rootNode = flowNodes.value.find(n => n.data.type === 'root')
+    if (!rootNode) return
+
+    let markdown = `# ${rootNode.data.label}\n\n`
+    
+    // 递归构建 Markdown 内容
+    const buildMarkdown = (parentId: string, level: number) => {
+        const children = flowEdges.value
+            .filter(e => e.source === parentId)
+            .map(e => flowNodes.value.find(n => n.id === e.target))
+            .filter(n => n !== undefined)
+
+        children.forEach(child => {
+            const indent = '  '.repeat(level - 1)
+            markdown += `${indent}- ${child!.data.label}\n`
+            if (child!.data.detailedContent) {
+                const detailIndent = '  '.repeat(level)
+                markdown += `${detailIndent}> ${child!.data.detailedContent.replace(/\n/g, `\n${detailIndent}> `)}\n`
+            }
+            buildMarkdown(child!.id, level + 1)
         })
-        const link = document.createElement('a')
-        link.download = `thinkflow-${Date.now()}.png`
-        link.href = dataUrl
-        link.click()
-    } catch (err) {
-        console.error('Export failed:', err)
     }
+
+    buildMarkdown(rootNode.id, 1)
+
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `thinkflow-${rootNode.data.label}-${Date.now()}.md`
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
 }
 
 /**
@@ -647,7 +665,6 @@ const startNewSession = () => {
 
                 <!-- 桌面端工具按钮组 -->
                 <div class="hidden md:flex items-center gap-2">
-                    <div class="h-4 w-[1px] bg-slate-100 mx-1 flex-shrink-0"></div>
 
                     <!-- 布局控制 -->
                     <button @click="fitView({ padding: 0.2, duration: 800 })" class="toolbar-btn text-blue-500 hover:bg-blue-50 border-blue-100 flex-shrink-0" :title="t('nav.fit')">
@@ -703,8 +720,8 @@ const startNewSession = () => {
 
                     <div class="h-4 w-[1px] bg-slate-100 mx-1 flex-shrink-0"></div>
 
-                    <!-- 导出图片 -->
-                    <button @click="exportImage" class="toolbar-btn text-emerald-600 hover:bg-emerald-50 border-emerald-100 flex-shrink-0">
+                    <!-- 导出选项 -->
+                    <button @click="exportMarkdown" class="toolbar-btn text-indigo-600 hover:bg-indigo-50 border-indigo-100 flex-shrink-0" :title="t('nav.export')">
                         <Download class="w-3.5 h-3.5 md:w-4 h-4" />
                         <span>{{ t('nav.export') }}</span>
                     </button>
@@ -804,8 +821,8 @@ const startNewSession = () => {
                     <span>{{ t('nav.map') }}</span>
                 </button>
 
-                <!-- 导出图片 -->
-                <button @click="exportImage(); isToolsExpanded = false" class="toolbar-btn text-emerald-600 hover:bg-emerald-50 border-emerald-100">
+                <!-- 导出选项 -->
+                <button @click="exportMarkdown(); isToolsExpanded = false" class="toolbar-btn text-indigo-600 hover:bg-indigo-50 border-indigo-100" :title="t('nav.export')">
                     <Download class="w-4 h-4" />
                     <span>{{ t('nav.export') }}</span>
                 </button>
