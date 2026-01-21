@@ -16,6 +16,7 @@ import { Handle, Position } from '@vue-flow/core'
 import {
     ArrowRight,
     BookOpen,
+    ChevronDown,
     ChevronRight,
     Image as ImageIcon,
     Maximize2,
@@ -49,6 +50,8 @@ const props = defineProps<{
     deepDive: (id: string, topic: string) => void
     generateNodeImage: (id: string, prompt: string) => void
     expandIdea: (param?: any, customInput?: string) => void
+    toggleSubtreeCollapse: (id: string) => void
+    isSubtreeCollapsed: (id: string) => boolean
 }>()
 
 const md = new MarkdownIt({
@@ -118,6 +121,16 @@ const handleBlur = () => {
             <span class="window-title" :style="{ color: props.activePath.nodeIds.has(props.id) ? props.config.edgeColor : '' }">
                 {{ props.data.type === 'root' ? props.t('node.mainTitle') : props.t('node.moduleTitle') }}
             </span>
+            <button
+                v-if="props.data.childrenCount > 0"
+                type="button"
+                class="flex items-center gap-1 px-1.5 py-1 rounded-md text-[9px] font-black tracking-widest uppercase transition-colors"
+                :class="props.isSubtreeCollapsed(props.id) ? 'text-orange-600 bg-orange-50' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'"
+                @click.stop="props.toggleSubtreeCollapse(props.id)"
+            >
+                <component :is="props.isSubtreeCollapsed(props.id) ? ChevronRight : ChevronDown" class="w-3 h-3" />
+                <span v-if="props.isSubtreeCollapsed(props.id) && props.data.hiddenDescendantCount" class="text-[9px] font-black">{{ props.data.hiddenDescendantCount }}</span>
+            </button>
         </div>
 
         <div v-if="props.data.isExpanding" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-2xl transition-all duration-300">

@@ -32,7 +32,7 @@ import WindowNode from './components/WindowNode.vue'
 
 // 业务层：统一的状态与动作入口
 import { useThinkFlow } from './composables/useThinkFlow'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 const { t, locale } = useI18n()
 
@@ -92,6 +92,10 @@ const {
     resetLayout,
     centerRoot,
     handleNodeDrag,
+    alignmentGuides,
+    viewport,
+    toggleSubtreeCollapse,
+    isSubtreeCollapsed,
     startNewSession,
     executeReset,
     generateSummary,
@@ -100,6 +104,20 @@ const {
     deepDive,
     expandIdea
 } = useThinkFlow({ t, locale })
+
+const verticalGuideStyle = computed(() => {
+    const x = alignmentGuides.value.x
+    if (x == null) return null
+    const screenX = x * viewport.value.zoom + viewport.value.x
+    return { left: `${screenX}px` }
+})
+
+const horizontalGuideStyle = computed(() => {
+    const y = alignmentGuides.value.y
+    if (y == null) return null
+    const screenY = y * viewport.value.zoom + viewport.value.y
+    return { top: `${screenY}px` }
+})
 
 /**
  * 切换语言（zh <-> en）
@@ -140,6 +158,8 @@ const fitToView = () => {
                 :class="{ 'space-pressed': isSpacePressed }"
                 :pan-on-drag="panOnDrag"
                 :selection-key-code="'Shift'"
+                :snap-to-grid="config.snapToGrid"
+                :snap-grid="config.snapGrid"
                 @node-drag="handleNodeDrag"
             >
                 <Background
@@ -170,12 +190,17 @@ const fitToView = () => {
                         :deepDive="deepDive"
                         :generateNodeImage="generateNodeImage"
                         :expandIdea="expandIdea"
+                        :toggleSubtreeCollapse="toggleSubtreeCollapse"
+                        :isSubtreeCollapsed="isSubtreeCollapsed"
                         @preview="previewImageUrl = $event"
                     />
                 </template>
             </VueFlow>
 
-            <div class="absolute inset-0 pointer-events-none z-10 p-12"></div>
+            <div class="absolute inset-0 pointer-events-none z-20">
+                <div v-if="config.showAlignmentGuides && verticalGuideStyle" class="absolute top-0 bottom-0 w-px bg-orange-300/70" :style="verticalGuideStyle"></div>
+                <div v-if="config.showAlignmentGuides && horizontalGuideStyle" class="absolute left-0 right-0 h-px bg-orange-300/70" :style="horizontalGuideStyle"></div>
+            </div>
 
             <SettingsModal :show="showSettings" :t="t" :apiConfig="apiConfig" @close="showSettings = false" />
             <ImagePreviewModal :url="previewImageUrl" @close="previewImageUrl = null" />

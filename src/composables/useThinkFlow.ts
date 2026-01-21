@@ -106,6 +106,7 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
         removeNodes,
         removeEdges,
         fitView,
+        viewport,
         onNodeDragStart,
         onNodeDrag,
         onNodeDragStop
@@ -124,6 +125,7 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
 
     const draggingNodeId = ref<string | null>(null)
     const dragLastPositionByNodeId = new Map<string, { x: number; y: number }>()
+    const alignmentGuides = ref<{ x: number | null; y: number | null }>({ x: null, y: null })
 
     /**
      * 交互：按住 Space 启用“抓手拖拽画布”
@@ -161,10 +163,77 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
      * 处理节点拖拽事件 (联动移动子节点)
      */
     const handleNodeDrag = (payload: any) => {
-        if (!config.hierarchicalDragging) return
-
         const node = payload?.node ?? payload
         if (!node?.id || !node?.position) return
+
+        const draggedStoreNode = flowNodes.value.find(n => n.id === node.id)
+        if (!draggedStoreNode) return
+
+        if (config.snapToAlignment) {
+            const snapThreshold = 8
+
+            const getNodeSize = (n: any) => {
+                const width = n.dimensions?.width ?? n.measured?.width ?? 280
+                const height = n.dimensions?.height ?? n.measured?.height ?? 180
+                return { width, height }
+            }
+
+            const draggedSize = getNodeSize(draggedStoreNode)
+            const proposedX = node.position.x
+            const proposedY = node.position.y
+
+            const draggedAnchorsX = [proposedX, proposedX + draggedSize.width / 2, proposedX + draggedSize.width]
+            const draggedAnchorsY = [proposedY, proposedY + draggedSize.height / 2, proposedY + draggedSize.height]
+
+            let bestX: { delta: number; guide: number } | null = null
+            let bestY: { delta: number; guide: number } | null = null
+
+            for (const other of flowNodes.value) {
+                if (other.id === node.id) continue
+                if (other.hidden) continue
+
+                const otherSize = getNodeSize(other)
+                const otherX = other.position?.x ?? 0
+                const otherY = other.position?.y ?? 0
+
+                const otherAnchorsX = [otherX, otherX + otherSize.width / 2, otherX + otherSize.width]
+                const otherAnchorsY = [otherY, otherY + otherSize.height / 2, otherY + otherSize.height]
+
+                for (const ox of otherAnchorsX) {
+                    for (const ax of draggedAnchorsX) {
+                        const delta = ox - ax
+                        const absDelta = Math.abs(delta)
+                        if (absDelta <= snapThreshold && (!bestX || absDelta < Math.abs(bestX.delta))) {
+                            bestX = { delta, guide: ox }
+                        }
+                    }
+                }
+
+                for (const oy of otherAnchorsY) {
+                    for (const ay of draggedAnchorsY) {
+                        const delta = oy - ay
+                        const absDelta = Math.abs(delta)
+                        if (absDelta <= snapThreshold && (!bestY || absDelta < Math.abs(bestY.delta))) {
+                            bestY = { delta, guide: oy }
+                        }
+                    }
+                }
+            }
+
+            const snappedX = bestX ? proposedX + bestX.delta : proposedX
+            const snappedY = bestY ? proposedY + bestY.delta : proposedY
+
+            alignmentGuides.value = config.showAlignmentGuides ? { x: bestX?.guide ?? null, y: bestY?.guide ?? null } : { x: null, y: null }
+
+            if (snappedX !== proposedX || snappedY !== proposedY) {
+                draggedStoreNode.position = { x: snappedX, y: snappedY }
+                node.position = { x: snappedX, y: snappedY }
+            }
+        } else {
+            alignmentGuides.value = { x: null, y: null }
+        }
+
+        if (!config.hierarchicalDragging) return
 
         const lastPosition = dragLastPositionByNodeId.get(node.id)
         if (!lastPosition) {
@@ -224,6 +293,7 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
         if (e?.node?.id) {
             dragLastPositionByNodeId.delete(e.node.id)
         }
+        alignmentGuides.value = { x: null, y: null }
     })
 
     /**
@@ -316,8 +386,66 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
         backgroundVariant: BackgroundVariant.Lines,
         showControls: true,
         showMiniMap: true,
-        hierarchicalDragging: true
+        hierarchicalDragging: true,
+        snapToGrid: true,
+        snapGrid: [16, 16] as [number, number],
+        snapToAlignment: true,
+        showAlignmentGuides: true
     })
+
+    const collapsedNodeIds = ref<string[]>([])
+
+    const isSubtreeCollapsed = (nodeId: string) => collapsedNodeIds.value.includes(nodeId)
+
+    const toggleSubtreeCollapse = (nodeId: string) => {
+        if (isSubtreeCollapsed(nodeId)) {
+            collapsedNodeIds.value = collapsedNodeIds.value.filter(id => id !== nodeId)
+        } else {
+            collapsedNodeIds.value = [...collapsedNodeIds.value, nodeId]
+        }
+    }
+
+    const applyCollapsedVisibility = () => {
+        const hiddenIds = new Set<string>()
+        const childrenCountById = new Map<string, number>()
+
+        for (const e of flowEdges.value) {
+            childrenCountById.set(e.source, (childrenCountById.get(e.source) ?? 0) + 1)
+        }
+
+        for (const id of collapsedNodeIds.value) {
+            const descendants = getDescendantIds(id)
+            descendants.forEach(d => hiddenIds.add(d))
+        }
+
+        setNodes(
+            flowNodes.value.map(n => {
+                const isHidden = hiddenIds.has(n.id)
+                const isCollapsed = isSubtreeCollapsed(n.id)
+                const hiddenDescendantCount = isCollapsed ? getDescendantIds(n.id).size : 0
+                const childrenCount = childrenCountById.get(n.id) ?? 0
+                const nextData =
+                    n.data?.hiddenDescendantCount !== hiddenDescendantCount || n.data?.childrenCount !== childrenCount
+                        ? { ...n.data, hiddenDescendantCount, childrenCount }
+                        : n.data
+
+                return {
+                    ...n,
+                    hidden: isHidden,
+                    data: nextData
+                }
+            })
+        )
+
+        setEdges(
+            flowEdges.value.map(e => ({
+                ...e,
+                hidden: hiddenIds.has(e.source) || hiddenIds.has(e.target)
+            }))
+        )
+    }
+
+    watch([() => collapsedNodeIds.value.join(','), () => flowNodes.value.length, () => flowEdges.value.length], applyCollapsedVisibility, { immediate: true })
 
     const lastAppliedStatus = ref('')
 
@@ -845,6 +973,10 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
         resetLayout,
         centerRoot,
         handleNodeDrag,
+        alignmentGuides,
+        viewport,
+        toggleSubtreeCollapse,
+        isSubtreeCollapsed,
         startNewSession,
         executeReset,
         generateSummary,
