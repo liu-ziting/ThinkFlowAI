@@ -655,6 +655,8 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
         const finalApiKey = apiConfig.mode === 'default' ? useConfig.apiKey || API_KEY : useConfig.apiKey
 
         try {
+            const topic = node.data.label || prompt
+            const detail = node.data.description || ''
             const response = await fetch(useConfig.baseUrl, {
                 method: 'POST',
                 headers: {
@@ -663,7 +665,7 @@ export function useThinkFlow({ t, locale }: { t: Translate; locale: Ref<string> 
                 },
                 body: JSON.stringify({
                     model: useConfig.model,
-                    prompt: t('prompts.image', { prompt })
+                    prompt: t('prompts.image', { topic, detail })
                 })
             })
 
