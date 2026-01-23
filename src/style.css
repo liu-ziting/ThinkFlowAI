@@ -62,6 +62,7 @@ body {
 
 .markdown-body ol {
   @apply list-decimal;
+  padding-left: 1.4rem;
 }
 
 .markdown-body li {
