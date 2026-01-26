@@ -76,7 +76,7 @@ const emit = defineEmits<{
         </div>
 
         <div
-            class="flex items-center gap-2 px-3 py-1 bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-full text-[10px] font-black tracking-widest uppercase select-none shadow-sm"
+            class="flex items-center gap-2 px-3 py-1 bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-full text-[10px] font-black tracking-widest select-none shadow-sm"
         >
             <a
                 href="https://github.com/liu-ziting/ThinkFlowAI"
