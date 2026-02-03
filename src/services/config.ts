@@ -11,7 +11,7 @@ export const API_KEY = ''
 export const DEFAULT_CONFIG = {
     chat: {
         baseUrl: 'https://thinkflow.lz-t.top/chat/completions',
-        model: 'glm-4-flash',
+        model: 'glm-4.7-flash',
         apiKey: ''
     },
     image: {
@@ -28,4 +28,3 @@ export const DEFAULT_CONFIG = {
 export const getConfig = () => {
     return DEFAULT_CONFIG
 }
-

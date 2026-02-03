@@ -153,7 +153,7 @@ const callAndClose = (fn: () => void) => {
         <div class="flex items-center gap-2 md:gap-6 flex-grow mr-2">
             <div class="flex items-center gap-2 flex-shrink-0">
                 <div class="w-3 h-3 bg-orange-500 rounded-sm rotate-45"></div>
-                <span class="font-black text-slate-900 tracking-tighter text-base md:text-lg">ThinkFlowAI</span>
+                <span class="logo font-black text-slate-900 tracking-tighter text-base md:text-lg">ThinkFlowAI</span>
             </div>
 
             <div class="h-6 w-[1px] bg-slate-200 mx-1 md:mx-2 flex-shrink-0"></div>

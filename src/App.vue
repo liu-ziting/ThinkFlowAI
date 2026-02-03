@@ -344,6 +344,10 @@ body {
     font-family: 'JetBrains Mono', monospace;
 }
 
+.logo {
+    font-family: 'JetBrains Mono', monospace;
+}
+
 .font-sans-cn {
     font-family: 'Microsoft YaHei', 'JetBrains Mono', monospace;
 }
