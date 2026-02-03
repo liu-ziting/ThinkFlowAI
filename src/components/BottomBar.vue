@@ -87,8 +87,8 @@ const emit = defineEmits<{
                 <Github class="w-3 h-3" />
                 <span>ThinkFlowAI</span>
             </a>
-            <span class="w-[1px] h-2 bg-slate-300 mx-1"></span>
-            <span class="text-slate-400">By:Liuziting</span>
+            <!-- <span class="w-[1px] h-2 bg-slate-300 mx-1"></span> -->
+            <!-- <span class="text-slate-400">By:Liuziting</span> -->
         </div>
     </div>
 </template>
